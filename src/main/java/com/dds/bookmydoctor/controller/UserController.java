@@ -9,8 +9,11 @@ import com.dds.bookmydoctor.service.DoctorService;
 import com.dds.bookmydoctor.service.UserAuthenticationService;
 import com.dds.bookmydoctor.service.UserService;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,10 +24,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/user")
+@Slf4j
 public class UserController {
 
   @Autowired
-  UserAuthenticationService userAuthenticationService;
+  private UserAuthenticationService userAuthenticationService;
+
+  @Autowired
+  private AuthenticationManager authenticationManager;
+
+  @Autowired
+  private UserDetailsService userDetailsService;
 
   @Autowired
   private UserService userService;
@@ -38,29 +48,29 @@ public class UserController {
   @GetMapping("/login")
   public ResponseEntity<String> login(
       @RequestParam("email") String email,
-      @RequestParam("password") String password){
+      @RequestParam("password") String password) {
     String authenticated = userAuthenticationService.authenticate(email, password);
 
     return ResponseEntity.ok(authenticated);
   }
 
   @GetMapping("/logout")
-  public ResponseEntity<String> logout(){
+  public ResponseEntity<String> logout() {
     String authenticated = userAuthenticationService.deAuthenticate();
 
     return ResponseEntity.ok(authenticated);
   }
 
   @PostMapping("/register")
-  public ResponseEntity<User> register(@RequestBody User user){
+  public ResponseEntity<User> register(@RequestBody User user) {
     boolean isAuthenticated = userAuthenticationService.isAuthenticated;
     User savedUser = userService.createUser(user);
-    return  ResponseEntity.ok(savedUser);
+    return ResponseEntity.ok(savedUser);
   }
 
   @GetMapping("/doctors")
-  public ResponseEntity<?> doctorsList(){
-    if(userAuthenticationService.isAuthenticated){
+  public ResponseEntity<?> doctorsList() {
+    if (userAuthenticationService.isAuthenticated) {
       return ResponseEntity.ok(doctorService.getDoctorList());
     }
 
@@ -70,9 +80,9 @@ public class UserController {
   @GetMapping("/doctors/search")
   public ResponseEntity<?> searchDoctors(
       @RequestParam(required = false) String name,
-      @RequestParam(required = false) String specialization){
+      @RequestParam(required = false) String specialization) {
 
-    if(userAuthenticationService.isAuthenticated){
+    if (userAuthenticationService.isAuthenticated) {
       DoctorSearchCriteria searchCriteria = new DoctorSearchCriteria();
       searchCriteria.setName(name);
       searchCriteria.setSpecialization(specialization);
@@ -85,9 +95,9 @@ public class UserController {
   }
 
   @PostMapping("/appointment")
-  public ResponseEntity<?> bookAppointment(@RequestBody AppointmentDto appointmentDto){
+  public ResponseEntity<?> bookAppointment(@RequestBody AppointmentDto appointmentDto) {
 
-    if(userAuthenticationService.isAuthenticated){
+    if (userAuthenticationService.isAuthenticated) {
       return ResponseEntity.ok(appointmentService.createAppointment(
           appointmentDto.getUserId(),
           appointmentDto.getDoctorId(),
@@ -99,9 +109,9 @@ public class UserController {
 
   @GetMapping("/appointments/{userId}")
   public ResponseEntity<?> getAppointments(
-      @PathVariable Integer userId){
+      @PathVariable Integer userId) {
 
-    if(userAuthenticationService.isAuthenticated){
+    if (userAuthenticationService.isAuthenticated) {
       return ResponseEntity.ok(appointmentService.appointmentList(userId));
     }
 
